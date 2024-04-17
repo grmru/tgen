@@ -1,0 +1,5 @@
+if (result[item.id].@@1@@ < item.@@1@@)
+{
+    result[item.id].@@0@@ = item.@@0@@;
+    result[item.id].@@1@@ = item.@@1@@;
+}
