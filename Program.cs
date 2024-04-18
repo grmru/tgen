@@ -23,8 +23,17 @@ public static class Program
 
             core.LoadTemplateFromFile(options.TemplateFilePath);
             core.LoadTableValuesFromCsv(options.ValuesFilePath);
-            
-            Console.WriteLine(core.FillTemplate());
+
+            if (string.IsNullOrEmpty(options.OutputFileName))
+            {
+                Console.WriteLine(core.FillTemplate());
+            }
+            else
+            {
+                // Осторожно - файл перезаписывается
+                File.WriteAllText(options.OutputFileName, core.FillTemplate());
+                Log.Information("Results were saved in {OutputFileName}", options.OutputFileName);
+            }
         }
         catch (Exception exception)
         {
