@@ -1,4 +1,6 @@
 ﻿using CommandLine;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace Tsyrkov.Tgen;
 
@@ -13,14 +15,35 @@ public static class Program
     
     private static void Run(CommandLineOptions options)
     {
-        Logger log = new Logger();
-        Core.Core core = new Core.Core(log);
+        try
+        {
+            PrepareLogger();
+            
+            var core = new Core();
 
-        core.LoadTemplateFromFile(options.TemplateFilePath);
-        core.LoadTableValuesFromCSV(options.ValuesFilePath);
-
-        string result = core.RenderTemplate();
-        Console.WriteLine("RESULT:");
-        Console.Write(result);
+            core.LoadTemplateFromFile(options.TemplateFilePath);
+            core.LoadTableValuesFromCsv(options.ValuesFilePath);
+            
+            Console.WriteLine(core.FillTemplate());
+        }
+        catch (Exception exception)
+        {
+            Log.Fatal("{Message}", exception.Message);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+    
+    private static void PrepareLogger()
+    {
+        Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
+                .WriteTo.Console(
+                        outputTemplate: "[{Timestamp:HH:mm:ss.fff}] ({Level:u3}) {Message:lj}{NewLine}{Exception}",
+                        theme: AnsiConsoleTheme.Sixteen)
+                .CreateLogger();
     }
 }
