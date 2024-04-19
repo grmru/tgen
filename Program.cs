@@ -17,22 +17,25 @@ public static class Program
     {
         try
         {
-            PrepareLogger();
+            var isOutputFileSpecified = !string.IsNullOrEmpty(options.OutputFilePath);
+            
+            PrepareLogger(suppressLogMessages: !isOutputFileSpecified);
             
             var core = new Core();
 
             core.LoadTemplateFromFile(options.TemplateFilePath);
-            core.LoadTableValuesFromCsv(options.ValuesFilePath);
+            core.LoadTemplateParametersFromCsv(options.TemplateParametersFilePath);
 
-            if (string.IsNullOrEmpty(options.OutputFileName))
+            var output = core.InstantiateTemplate();
+
+            if (isOutputFileSpecified)
             {
-                Console.WriteLine(core.FillTemplate());
+                File.WriteAllText(options.OutputFilePath, output);
+                Log.Information("Results were saved in {OutputFilePath}", options.OutputFilePath);
             }
             else
             {
-                // Осторожно - файл перезаписывается
-                File.WriteAllText(options.OutputFileName, core.FillTemplate());
-                Log.Information("Results were saved in {OutputFileName}", options.OutputFileName);
+                Console.WriteLine(output);
             }
         }
         catch (Exception exception)
@@ -45,13 +48,14 @@ public static class Program
         }
     }
     
-    private static void PrepareLogger()
+    private static void PrepareLogger(bool suppressLogMessages)
     {
         Log.Logger = new LoggerConfiguration()
+                .Filter.ByExcluding(_ => suppressLogMessages)
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
                 .WriteTo.Console(
-                        outputTemplate: "[{Timestamp:HH:mm:ss.fff}] ({Level:u3}) {Message:lj}{NewLine}{Exception}",
+                        outputTemplate: "[{Level}] {Message:lj}{NewLine}{Exception}",
                         theme: AnsiConsoleTheme.Sixteen)
                 .CreateLogger();
     }
