@@ -1,63 +1,82 @@
-using Tsyrkov.Tgen.Interface;
+using Microsoft.VisualBasic.FileIO;
+using Serilog;
 
-namespace Tsyrkov.Tgen.Core;
+namespace Tsyrkov.Tgen;
 
 public class Core
 {
-    private ILogger _log { get; }
-    public string DataTemplate { get; set; } = string.Empty;
-    public List<string[]> TableValues { get; set; } = [];
-
-    public Core(ILogger logger)
-    {
-        this._log = logger;
-    }
+    private string Template { get; set; } = string.Empty;
+    private List<string[]> TableValues { get; set; } = [];
 
     public void LoadTemplateFromFile(string filePath)
     {
         try
         {
-            DataTemplate = System.IO.File.ReadAllText(filePath);
+            Template = File.ReadAllText(filePath);
+
+            if (string.IsNullOrEmpty(Template))
+            {
+                Log.Warning("Template is empty.");
+            }
         }
-        catch (Exception ex) { _log.Error(ex); }
+        catch (Exception exception)
+        {
+            Log.Error("Template could not be loaded. Reason: {Message}", exception.Message);
+        }
     }
 
-    public void LoadTableValuesFromCSV(string filePath, string separator = ";")
+    public void LoadTableValuesFromCsv(string filePath, string separator = ";")
     {
-        string[] lines = [];
         try
         {
-            lines = System.IO.File.ReadAllLines(filePath);
-        }
-        catch (Exception ex) { _log.Error(ex); }
+            using var textFieldParser = new TextFieldParser(filePath);
 
-        for (int i = 0; i < lines.Length; i++)
+            textFieldParser.TextFieldType = FieldType.Delimited;
+            textFieldParser.SetDelimiters(separator);
+
+            while (!textFieldParser.EndOfData)
+            {
+                var rows = textFieldParser.ReadFields();
+
+                if (rows != null)
+                {
+                    TableValues.Add(rows);
+                }
+            }
+        }
+        catch (Exception exception)
         {
-            string line = lines[i];
-            string[] values = line.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            TableValues.Add(values);
+            Log.Error("Values could not be loaded. Reason: {Message}", exception.Message);
         }
     }
 
-    public string RenderTemplate()
+    public string FillTemplate()
     {
-        if (TableValues.Count == 0) return string.Empty;
-
-        string ret = string.Empty;
-
-        for (int i = 0; i < TableValues.Count; i++) 
-        { 
-            string item = new string(DataTemplate);
-            for (int j = 0; j < TableValues[i].Length; j++)
-            {
-                item = item.Replace($"@@{j}@@", TableValues[i][j].Trim());
-            }
-            ret += item;
-            // ret += System.Environment.NewLine;
-            // ret += "// -----";
-            ret += System.Environment.NewLine;
+        var output = string.Empty;
+        
+        if (TableValues.Count == 0)
+        {
+            Log.Warning("There are no values.");
+            return output;
         }
 
-        return ret;
+        for (var i = 0; i < TableValues.Count; i++)
+        {
+            var currentPattern = new string(Template);
+
+            for (var j = 0; j < TableValues[i].Length; j++)
+            {
+                currentPattern = currentPattern.Replace($"@@{j}@@", TableValues[i][j].Trim());
+            }
+
+            output += currentPattern;
+            
+            if (i < TableValues.Count - 1)
+            {
+                output += Environment.NewLine;
+            }
+        }
+
+        return output;
     }
 }

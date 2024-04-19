@@ -1,26 +1,58 @@
-﻿namespace Tsyrkov.Tgen;
+﻿using CommandLine;
+using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
+
+namespace Tsyrkov.Tgen;
 
 public static class Program
 {
     public static void Main(string[] args)
     {
-        if (args.Length < 2 || args.Length == 0) { PrintUsage(); return; }
-
-        Logger log = new Logger();
-
-        Core.Core core = new Core.Core(log);
-
-        core.LoadTemplateFromFile(args[0]);
-        core.LoadTableValuesFromCSV(args[1]);
-
-        string result = core.RenderTemplate();
-        Console.WriteLine("RESULT:");
-        Console.Write(result);
+        var parser = new Parser(config => config.HelpWriter = Console.Out);
+        
+        parser.ParseArguments<CommandLineOptions>(args).WithParsed(Run);
     }
-
-    public static void PrintUsage()
+    
+    private static void Run(CommandLineOptions options)
     {
-        Console.WriteLine("USAGE:");
-        Console.WriteLine("tgen [template file path] [values file path]");
+        try
+        {
+            PrepareLogger();
+            
+            var core = new Core();
+
+            core.LoadTemplateFromFile(options.TemplateFilePath);
+            core.LoadTableValuesFromCsv(options.ValuesFilePath);
+
+            if (string.IsNullOrEmpty(options.OutputFileName))
+            {
+                Console.WriteLine(core.FillTemplate());
+            }
+            else
+            {
+                // Осторожно - файл перезаписывается
+                File.WriteAllText(options.OutputFileName, core.FillTemplate());
+                Log.Information("Results were saved in {OutputFileName}", options.OutputFileName);
+            }
+        }
+        catch (Exception exception)
+        {
+            Log.Fatal("{Message}", exception.Message);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+    
+    private static void PrepareLogger()
+    {
+        Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
+                .WriteTo.Console(
+                        outputTemplate: "[{Timestamp:HH:mm:ss.fff}] ({Level:u3}) {Message:lj}{NewLine}{Exception}",
+                        theme: AnsiConsoleTheme.Sixteen)
+                .CreateLogger();
     }
 }
