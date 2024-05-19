@@ -1,0 +1,53 @@
+if (result[item.id].alpha_date < item.alpha_date)
+{
+    result[item.id].alpha = item.alpha;
+    result[item.id].alpha_date = item.alpha_date;
+}
+
+if (result[item.id].beta_date < item.beta_date)
+{
+    result[item.id].beta = item.beta;
+    result[item.id].beta_date = item.beta_date;
+}
+
+if (result[item.id].gamma_date < item.gamma_date)
+{
+    result[item.id].gamma = item.gamma;
+    result[item.id].gamma_date = item.gamma_date;
+}
+
+if (result[item.id].delta_date < item.delta_date)
+{
+    result[item.id].delta = item.delta;
+    result[item.id].delta_date = item.delta_date;
+}
+
+if (result[item.id].epsilon_date < item.epsilon_date)
+{
+    result[item.id].epsilon = item.epsilon;
+    result[item.id].epsilon_date = item.epsilon_date;
+}
+
+if (result[item.id].zeta_date < item.zeta_date)
+{
+    result[item.id].zeta = item.zeta;
+    result[item.id].zeta_date = item.zeta_date;
+}
+
+if (result[item.id].eta_date < item.eta_date)
+{
+    result[item.id].eta = item.eta;
+    result[item.id].eta_date = item.eta_date;
+}
+
+if (result[item.id].gamma_date < item.gamma_date)
+{
+    result[item.id].gamma = item.gamma;
+    result[item.id].gamma_date = item.gamma_date;
+}
+
+if (result[item.id].theta_date < item.theta_date)
+{
+    result[item.id].theta = item.theta;
+    result[item.id].theta_date = item.theta_date;
+}

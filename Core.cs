@@ -6,18 +6,13 @@ namespace Tsyrkov.Tgen;
 public class Core
 {
     private string Template { get; set; } = string.Empty;
-    private List<string[]> TableValues { get; set; } = [];
+    private List<string[]> TemplateParameters { get; set; } = [];
 
     public void LoadTemplateFromFile(string filePath)
     {
         try
         {
             Template = File.ReadAllText(filePath);
-
-            if (string.IsNullOrEmpty(Template))
-            {
-                Log.Warning("Template is empty.");
-            }
         }
         catch (Exception exception)
         {
@@ -25,7 +20,7 @@ public class Core
         }
     }
 
-    public void LoadTableValuesFromCsv(string filePath, string separator = ";")
+    public void LoadTemplateParametersFromCsv(string filePath, string separator = ";")
     {
         try
         {
@@ -40,38 +35,42 @@ public class Core
 
                 if (rows != null)
                 {
-                    TableValues.Add(rows);
+                    TemplateParameters.Add(rows);
                 }
             }
         }
         catch (Exception exception)
         {
-            Log.Error("Values could not be loaded. Reason: {Message}", exception.Message);
+            Log.Error("Template parameters could not be loaded. Reason: {Message}", exception.Message);
         }
     }
 
-    public string FillTemplate()
+    public string InstantiateTemplate()
     {
         var output = string.Empty;
         
-        if (TableValues.Count == 0)
+        if (string.IsNullOrEmpty(Template))
         {
-            Log.Warning("There are no values.");
-            return output;
+            Log.Warning("Template is not specified.");
+        }
+        
+        if (TemplateParameters.Count == 0)
+        {
+            Log.Warning("Template parameters are not specified.");
         }
 
-        for (var i = 0; i < TableValues.Count; i++)
+        for (var i = 0; i < TemplateParameters.Count; i++)
         {
-            var currentPattern = new string(Template);
+            var templateInstance = new string(Template);
 
-            for (var j = 0; j < TableValues[i].Length; j++)
+            for (var j = 0; j < TemplateParameters[i].Length; j++)
             {
-                currentPattern = currentPattern.Replace($"@@{j}@@", TableValues[i][j].Trim());
+                templateInstance = templateInstance.Replace($"@@{j}@@", TemplateParameters[i][j].Trim());
             }
 
-            output += currentPattern;
+            output += templateInstance;
             
-            if (i < TableValues.Count - 1)
+            if (i < TemplateParameters.Count - 1)
             {
                 output += Environment.NewLine;
             }
